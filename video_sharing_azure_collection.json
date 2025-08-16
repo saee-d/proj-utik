@@ -1,0 +1,705 @@
+{
+  "info": {
+    "name": "Video Sharing Platform API - Azure Production",
+    "description": "Production API collection for the video sharing platform deployed on Azure",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "video-sharing-api-azure-prod",
+    "updatedAt": "2025-08-14T00:00:00.000Z"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "azure_base_url",
+      "value": "https://proj-backend-svc.azurewebsites.net",
+      "type": "string",
+      "description": "Azure Functions production URL"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "creator@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "SecurePassword123!",
+      "type": "string"
+    },
+    {
+      "key": "video_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔍 Quick Tests",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{azure_base_url}}/api/health",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get All Videos (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Authentication Flow",
+      "item": [
+        {
+          "name": "1. Register Consumer Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Consumer registered:', response.email, '- Role:', response.role);",
+                  "} else {",
+                  "    console.log('⚠️ Registration response:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"consumer@example.com\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/auth/register",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2. Create Creator Account (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Creator created:', response.email, '- Role:', response.role);",
+                  "} else {",
+                  "    console.log('⚠️ Creator creation response:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/admin/create-creator",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "admin", "create-creator"]
+            }
+          }
+        },
+        {
+          "name": "3. Login & Get Token (Creator)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    console.log('✅ Creator login successful, token saved');",
+                  "    console.log('Token preview:', response.access_token.substring(0, 20) + '...');",
+                  "} else {",
+                  "    console.log('❌ Login failed:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{user_email}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{user_password}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/auth/login",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "4. Verify Creator Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Creator profile verified:', response.email, '- Role:', response.role);",
+                  "    if (response.role === 'CREATOR') {",
+                  "        console.log('🎬 User can upload videos');",
+                  "    } else {",
+                  "        console.log('👀 User can only view content');",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Profile verification failed:', pm.response.code);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{azure_base_url}}/api/auth/me",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎬 Video Management",
+      "item": [
+        {
+          "name": "Upload Dance Video",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('video_id', response.id);",
+                  "    console.log('✅ Video uploaded successfully. ID:', response.id);",
+                  "} else {",
+                  "    console.log('❌ Video upload failed:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Epic Dance Challenge #viral\",\n  \"description\": \"Amazing dance moves that will blow your mind! Don't forget to like and follow for more epic content! 🕺💃\",\n  \"genre\": \"Dance\",\n  \"ageRating\": \"PG\",\n  \"fileUrl\": \"https://projutik.blob.core.windows.net/videos/dance-challenge-viral.mp4\",\n  \"thumbnailUrl\": \"https://projutik.blob.core.windows.net/thumbnails/dance-challenge-thumb.jpg\",\n  \"sizeMb\": 15.7,\n  \"contentType\": \"video/mp4\",\n  \"originalFilename\": \"epic_dance_challenge.mp4\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos"]
+            }
+          }
+        },
+        {
+          "name": "Upload Video File (Multipart) - Dance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('video_id', response.id);",
+                  "    console.log('✅ Video file uploaded successfully. ID:', response.id);",
+                  "    console.log('File URL:', response.fileUrl);",
+                  "    console.log('Size:', response.sizeMb, 'MB');",
+                  "} else {",
+                  "    console.log('❌ Video file upload failed:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "video_file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a dance video file (.mp4, .mov, .avi)"
+                },
+                {
+                  "key": "thumbnail_file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Optional thumbnail image (.jpg, .png)"
+                },
+                {
+                  "key": "title",
+                  "value": "Epic Dance Challenge #viral 🕺",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Amazing dance moves that will blow your mind! Don't forget to like and follow for more epic content! 🕺💃",
+                  "type": "text"
+                },
+                {
+                  "key": "genre",
+                  "value": "Dance",
+                  "type": "text"
+                },
+                {
+                  "key": "ageRating",
+                  "value": "PG",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/upload/video",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "upload", "video"]
+            }
+          }
+        },
+        {
+          "name": "Upload Comedy Skit",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"When your code finally works 😂\",\n  \"description\": \"Every programmer can relate to this! The struggles are real 😭💻\",\n  \"genre\": \"Comedy\",\n  \"ageRating\": \"PG\",\n  \"fileUrl\": \"https://projutik.blob.core.windows.net/videos/code-works-comedy.mp4\",\n  \"thumbnailUrl\": \"https://projutik.blob.core.windows.net/thumbnails/code-works-thumb.jpg\",\n  \"sizeMb\": 8.3,\n  \"contentType\": \"video/mp4\",\n  \"originalFilename\": \"code_finally_works.mp4\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos"]
+            }
+          }
+        },
+        {
+          "name": "Search Dance Videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos/search?genre=Dance",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos", "search"],
+              "query": [
+                {
+                  "key": "genre",
+                  "value": "Dance"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Watch Video (Increment Views)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Video watched. Views:', response.viewCount);",
+                  "    console.log('Title:', response.title);",
+                  "    console.log('Creator ID:', response.creatorId);",
+                  "    console.log('Genre:', response.genre);",
+                  "    console.log('File URL:', response.fileUrl);",
+                  "    console.log('Average Rating:', response.average_rating || 'No ratings yet');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos/{{video_id}}",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos", "{{video_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Social Features",
+      "item": [
+        {
+          "name": "Add Positive Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Comment added:', response.text);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"{{video_id}}\",\n  \"text\": \"This is absolutely incredible! 🔥 Your moves are so smooth! Can you teach us? 🙏\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/comments",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Rate Video 5 Stars",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    console.log('✅ 5-star rating submitted!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"{{video_id}}\",\n  \"rating\": 5\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/ratings",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "ratings"]
+            }
+          }
+        },
+        {
+          "name": "View All Comments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const comments = pm.response.json();",
+                  "    console.log('✅ Comments loaded:', comments.length, 'total');",
+                  "    comments.forEach((comment, index) => {",
+                  "        console.log(`${index + 1}. ${comment.user_email}: ${comment.text}`);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos/{{video_id}}/comments",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos", "{{video_id}}", "comments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Different User Types",
+      "item": [
+        {
+          "name": "Register Consumer Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"viewer@example.com\",\n  \"password\": \"ViewerPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/auth/register",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Consumer Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('consumer_token', response.access_token);",
+                  "    console.log('✅ Consumer logged in');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "viewer@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "ViewerPass123!",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/auth/login",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Consumer Tries to Upload Video (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 403) {",
+                  "    console.log('✅ Correct! Consumer cannot upload videos - Access denied');",
+                  "} else if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    console.log('❌ ERROR: Consumer should not be able to upload videos!');",
+                  "} else {",
+                  "    console.log('⚠️ Unexpected response:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{consumer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Consumer's Attempt to Upload\",\n  \"description\": \"This should fail!\",\n  \"genre\": \"Test\",\n  \"ageRating\": \"G\",\n  \"fileUrl\": \"https://example.com/fake-video.mp4\"\n}"
+            },
+            "url": {
+              "raw": "{{azure_base_url}}/api/videos",
+              "host": ["{{azure_base_url}}"],
+              "path": ["api", "videos"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

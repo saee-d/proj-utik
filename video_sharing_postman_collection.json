@@ -1,0 +1,839 @@
+{
+  "info": {
+    "name": "Video Sharing Platform API",
+    "description": "Complete API collection for the video sharing platform similar to TikTok with user authentication, video management, comments, and ratings",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "video-sharing-api-v1",
+    "updatedAt": "2025-08-14T00:00:00.000Z"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:7071",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "testpassword123",
+      "type": "string"
+    },
+    {
+      "key": "video_id",
+      "value": "",
+      "type": "string",
+      "description": "ID of a video for testing individual video operations"
+    },
+    {
+      "key": "creator_email",
+      "value": "",
+      "type": "string",
+      "description": "Email of the creator user"
+    },
+    {
+      "key": "creator_password",
+      "value": "",
+      "type": "string",
+      "description": "Password of the creator user"
+    },
+    {
+      "key": "creator_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for creator user"
+    },
+    {
+      "key": "consumer_email",
+      "value": "",
+      "type": "string",
+      "description": "Email of the consumer user"
+    },
+    {
+      "key": "consumer_password",
+      "value": "",
+      "type": "string",
+      "description": "Password of the consumer user"
+    },
+    {
+      "key": "consumer_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for consumer user"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Health check endpoint to verify API is running"
+      }
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('User registered successfully:', response);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    console.log('Login successful, token saved:', response.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{user_email}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{user_password}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email and password to get access token"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current user profile (requires authentication)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Video Management",
+      "item": [
+        {
+          "name": "Get All Videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/videos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Get list of all videos for dashboard"
+          }
+        },
+        {
+          "name": "Upload Video",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My Awesome Video\",\n  \"description\": \"This is an amazing video about amazing things\",\n  \"genre\": \"Entertainment\",\n  \"ageRating\": \"PG\",\n  \"fileUrl\": \"https://sample-videos.com/zip/10/mp4/mp4/SampleVideo_1280x720_1mb.mp4\",\n  \"thumbnailUrl\": \"https://sample-thumbnails.com/sample-thumb.jpg\",\n  \"sizeMb\": 1.2,\n  \"contentType\": \"video/mp4\",\n  \"originalFilename\": \"awesome_video.mp4\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/videos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Upload a new video (requires authentication)"
+          }
+        },
+        {
+          "name": "Upload Video File (Multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "video_file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a video file to upload"
+                },
+                {
+                  "key": "thumbnail_file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Optional thumbnail image"
+                },
+                {
+                  "key": "title",
+                  "value": "My Awesome Video",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "This is an amazing video about amazing things",
+                  "type": "text"
+                },
+                {
+                  "key": "genre",
+                  "value": "Entertainment",
+                  "type": "text"
+                },
+                {
+                  "key": "ageRating",
+                  "value": "PG",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload/video",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload", "video"]
+            },
+            "description": "Upload actual video file with metadata (requires authentication)"
+          }
+        },
+        {
+          "name": "Search Videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/videos/search?title=awesome&genre=Entertainment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos", "search"],
+              "query": [
+                {
+                  "key": "title",
+                  "value": "awesome",
+                  "description": "Search by title (optional)"
+                },
+                {
+                  "key": "genre",
+                  "value": "Entertainment",
+                  "description": "Filter by genre (optional)"
+                }
+              ]
+            },
+            "description": "Search videos by title or genre"
+          }
+        },
+        {
+          "name": "Get Video by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/videos/{{video_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos", "{{video_id}}"]
+            },
+            "description": "Get specific video details and increment view count"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Add Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"{{video_id}}\",\n  \"text\": \"Great video! Really enjoyed watching it.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "comments"]
+            },
+            "description": "Add a comment to a video (requires authentication)"
+          }
+        },
+        {
+          "name": "Get Video Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/videos/{{video_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos", "{{video_id}}", "comments"]
+            },
+            "description": "Get all comments for a specific video"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ratings",
+      "item": [
+        {
+          "name": "Rate Video",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"{{video_id}}\",\n  \"rating\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ratings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ratings"]
+            },
+            "description": "Rate a video from 1-5 stars (requires authentication)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎭 Role-Based Authentication Tests",
+      "item": [
+        {
+          "name": "1️⃣ Admin Creates Creator User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.role === 'CREATOR') {",
+                  "        console.log('✅ Creator user created successfully');",
+                  "        pm.collectionVariables.set('creator_email', 'creator@example.com');",
+                  "        pm.collectionVariables.set('creator_password', 'CreatorPass123!');",
+                  "    } else {",
+                  "        console.log('❌ ERROR: User was not created with CREATOR role');",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Failed to create creator user:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"creator@example.com\",\n  \"password\": \"CreatorPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/create-creator",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "create-creator"]
+            },
+            "description": "Admin endpoint to create a CREATOR user (no public access)"
+          }
+        },
+        {
+          "name": "2️⃣ Creator Logs In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('creator_token', response.access_token);",
+                  "    console.log('✅ Creator logged in successfully');",
+                  "} else {",
+                  "    console.log('❌ Creator login failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{creator_email}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{creator_password}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Creator logs in using same login endpoint as consumers"
+          }
+        },
+        {
+          "name": "3️⃣ Creator Uploads Video (Should Succeed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    console.log('✅ Creator successfully uploaded video');",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('video_id', response.id);",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Creator video upload failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{creator_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Creator's Amazing Video\",\n  \"description\": \"This video was uploaded by a CREATOR user\",\n  \"genre\": \"Entertainment\",\n  \"ageRating\": \"PG\",\n  \"fileUrl\": \"https://example.com/creator-video.mp4\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/videos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Creator should be able to upload videos"
+          }
+        },
+        {
+          "name": "4️⃣ Consumer Registers (Self-Service)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.role === 'CONSUMER') {",
+                  "        console.log('✅ Consumer registered successfully with CONSUMER role');",
+                  "        pm.collectionVariables.set('consumer_email', 'viewer@example.com');",
+                  "        pm.collectionVariables.set('consumer_password', 'ViewerPass123!');",
+                  "    } else {",
+                  "        console.log('❌ ERROR: Consumer was not assigned CONSUMER role');",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Consumer registration failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"viewer@example.com\",\n  \"password\": \"ViewerPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Consumers can register themselves with default CONSUMER role"
+          }
+        },
+        {
+          "name": "5️⃣ Consumer Logs In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('consumer_token', response.access_token);",
+                  "    console.log('✅ Consumer logged in successfully');",
+                  "} else {",
+                  "    console.log('❌ Consumer login failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{consumer_email}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{consumer_password}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Consumer logs in using same login endpoint as creators"
+          }
+        },
+        {
+          "name": "6️⃣ Consumer Tries to Upload Video (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 403) {",
+                  "    console.log('✅ CORRECT! Consumer cannot upload videos - Access forbidden');",
+                  "} else if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    console.log('❌ ERROR: Consumer should NOT be able to upload videos!');",
+                  "} else {",
+                  "    console.log('⚠️ Unexpected response:', pm.response.code, pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{consumer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Consumer's Attempt to Upload\",\n  \"description\": \"This should fail with 403 Forbidden!\",\n  \"genre\": \"Test\",\n  \"ageRating\": \"G\",\n  \"fileUrl\": \"https://example.com/fake-video.mp4\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/videos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Consumer should be denied access to upload videos"
+          }
+        },
+        {
+          "name": "7️⃣ Consumer Views Videos (Should Succeed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    console.log('✅ Consumer can view videos successfully');",
+                  "} else {",
+                  "    console.log('❌ Consumer should be able to view videos');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{consumer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/videos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Consumer should be able to view all videos"
+          }
+        },
+        {
+          "name": "8️⃣ Consumer Adds Comment (Should Succeed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    console.log('✅ Consumer can comment on videos');",
+                  "} else {",
+                  "    console.log('❌ Consumer should be able to comment on videos');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{consumer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_id\": \"{{video_id}}\",\n  \"text\": \"Great video! Love the content from this creator.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "comments"]
+            },
+            "description": "Consumer should be able to comment on videos"
+          }
+        }
+      ]
+    }
+  ]
+}
