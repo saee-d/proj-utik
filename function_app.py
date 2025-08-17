@@ -71,7 +71,40 @@ CONFIG = {
     "JWT_ACCESS_TOKEN_EXPIRE_MINUTES": int(
         os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     ),
+    # CORS Configuration
+    "FRONTEND_URL": os.getenv("FRONTEND_URL", "http://localhost:3000"),
+    "ENVIRONMENT": os.getenv("ENVIRONMENT", "production"),
 }
+
+
+# CORS Origins Configuration
+def get_allowed_origins():
+    """Get allowed CORS origins - single origin from environment"""
+    origins = []
+
+    # Primary frontend URL from environment
+    frontend_url = CONFIG["FRONTEND_URL"]
+    if frontend_url:
+        origins.append(frontend_url)
+
+    # Only add localhost for development environment
+    if CONFIG["ENVIRONMENT"].lower() == "development":
+        origins.append("http://localhost:3000")
+        origins.append("http://127.0.0.1:3000")
+        origins.append("http://localhost:7071")
+
+    # Remove duplicates and ensure we have at least one origin
+    origins = list(set(filter(None, origins)))
+
+    if not origins:
+        logger.warning("No CORS origins configured! Adding localhost fallback.")
+        origins = ["http://localhost:3000"]
+
+    logger.info(f"CORS allowed origins: {origins}")
+    return origins
+
+
+ALLOWED_ORIGINS = get_allowed_origins()
 
 
 # CosmosDB Client
@@ -405,11 +438,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
 # FastAPI app
 fastapi_app = FastAPI(title="Video Sharing API", version="1.0.0")
 
-# CORS middleware
+# CORS middleware - Secure single-origin configuration
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,  # 🔒 Single origin from environment only!
+    allow_credentials=True,  # ✅ Safe with specific origins
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -1077,7 +1110,48 @@ async def rate_video(
 
         ratings_container.create_item(rating_doc)
 
-        return {"message": "Rating added successfully"}
+        # Recalculate average rating for the video
+        all_ratings_query = "SELECT c.rating FROM c WHERE c.video_id = @video_id"
+        all_ratings_params = [{"name": "@video_id", "value": rating_data.video_id}]
+        all_ratings = list(
+            ratings_container.query_items(
+                query=all_ratings_query,
+                parameters=all_ratings_params,
+                enable_cross_partition_query=True,
+            )
+        )
+        ratings_list = [r["rating"] for r in all_ratings if "rating" in r]
+        avg_rating = (
+            round(sum(ratings_list) / len(ratings_list), 2) if ratings_list else None
+        )
+
+        # Update the video's average_rating field
+        videos_container = cosmos_client.get_container("videos")
+        try:
+            video = videos_container.read_item(
+                item=rating_data.video_id, partition_key=rating_data.video_id
+            )
+        except exceptions.CosmosResourceNotFoundError:
+            # If direct read fails, try querying (for cross-partition query)
+            video_query = "SELECT * FROM c WHERE c.id = @video_id"
+            video_params = [{"name": "@video_id", "value": rating_data.video_id}]
+            videos = list(
+                videos_container.query_items(
+                    query=video_query,
+                    parameters=video_params,
+                    enable_cross_partition_query=True,
+                )
+            )
+            if not videos:
+                raise HTTPException(
+                    status_code=404, detail="Video not found for rating update"
+                )
+            video = videos[0]
+
+        video["average_rating"] = avg_rating
+        videos_container.replace_item(item=video["id"], body=video)
+
+        return {"message": "Rating added successfully", "average_rating": avg_rating}
     except HTTPException:
         raise
     except Exception as e:
